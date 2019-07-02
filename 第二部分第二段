@@ -1,0 +1,27 @@
+from snownlp import SnowNLP#nowNLP是一个python写的类库，可以方便的处理中文文本内容
+
+data = pd.read_csv("C:\\Users\\miracle\\Desktop\\pingjia.csv",lineterminator='\n')
+
+data["semiscore"] = data['content'].apply(lambda x: SnowNLP(x).sentiments)#数据分布图
+
+data['semilabel'] = data["semiscore"].apply(lambda x: 1 if x>0.5 else -1)#数据离散化
+
+plt.hist(data["semiscore"], bins = np.arange(0, 1.01, 0.01),label="semisocre", color="#ff9999")#设置样式
+
+plt.xlabel("semiscore")#x轴标签
+
+plt.ylabel("number")#y轴标签
+plt.title("The semi-score of comment")#题目
+
+plt.show()
+
+ 
+semilabel = data["semilabel"].value_counts()
+plt.bar(semilabel.index,semilabel.values,tick_label=semilabel.index,color='#90EE90')
+
+plt.xlabel("semislabel")
+plt.ylabel("number")
+plt.title("The semi-label of comment")
+
+plt.show()#展示图片
+
