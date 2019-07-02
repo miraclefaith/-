@@ -1,0 +1,60 @@
+import requests# 用于获取网页内容的模块 
+import json#JSON(JavaScript Object Notation) 是一种轻量级的数据交换格式，易于人阅读和编写
+import time
+import random
+import pandas as pd#pandas提供了大量能使我们快速便捷地处理数据的函数和方法。
+def get_one_page(url):
+
+    headers = {
+    'User-Agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36'
+    }
+
+    response = requests.get(url,headers=headers)
+
+    if response.status_code == 200:  #页面正常响应 
+        return response.text # 返回页面源代码
+    return None
+
+commentId=[]
+nickname=[]
+userId=[]
+content=[]
+likedCount=[]
+ 
+#解析第一页数据
+def parse_ono_page(html):
+
+    data = json.loads(html)['comments'] #评论以json形式存储,故以json形式截取
+#将已编码的 JSON 字符串解码为 Python 对象
+#截取的项目
+    for item in data:
+
+        commentId.append(item['commentId']),#评论id
+
+        nickname.append(item['user']['nickname']),#评论用户的昵称
+    
+        userId.append(item['user']['userId']),#评论用户的id
+        content.append(item['content']),#评论内容
+
+        likedCount.append(item['likedCount'])#点赞数
+
+ 
+#保存数据到文本文档
+
+def save_to_txt():
+    for i in range(1, 10):#取了10页
+        url='http://music.163.com/api/v1/resource/comments/R_SO_4_862129612?limit=20&offset=' + str(20*(i-1))
+        html = get_one_page(url)
+        print('正在保存第%d页.'% i)
+        parse_ono_page(html)
+        time.sleep(5 + float(random.randint(1,100)) /20) #引入time和random模块
+if __name__ =='__main__':
+
+    save_to_txt()
+wangpai = {'commentId': commentId, 'nickname': nickname, 'userId': userId, 'content': content, 'likedCount':likedCount}
+
+wangpai = pd.DataFrame(wangpai, columns=['commentId', 'nickname', 'userId', 'content','likedCount'])
+file = open('C:\\Users\\miracle\\Desktop\\' + 'pingjia' + '.csv','w')
+ 
+file.close()
+wangpai.to_csv("C:\\Users\\miracle\\Desktop\\pingjia.csv",encoding="utf_8_sig",index = False)#保存到csv文件
