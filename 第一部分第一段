@@ -1,0 +1,64 @@
+import os#os 模块在运维工作中是很常用的一个模块。通过os模块调用系统命令。os模块可以跨平台使用。
+import requests#requests是python实现的简单易用的HTTP库，使用起来比urllib简洁很多
+from lxml import etree# lxml是python的一个解析库，支持HTML和XML的解析，支持XPath解析方式，而且解析效率非常高
+import time
+
+taihe_host = 'http://music.taihe.com'
+lyric_search_template = 'http://music.taihe.com/search/song?key={}&start={}&size=20'
+#在路径前面加r，即保持字符原始值的意思。
+os.mkdir(r'C:\Users\miracle\Desktop\lyric')#在windows系统当中读取文件路径可以使用\,但是在python字符串中\有转义的含义，如\t可代表TAB，\n代表换行，所以我们需要采取一些方式使得\不被解读为转义字符。
+#创建文件夹
+# 获取页面 html 文档
+def get_page(url, encoding='utf-8'):
+  try:#!/usr/bin/env python
+    r = requests.get(url)
+    r.encoding = encoding
+    return r.text
+  except Exception as e:   
+    print('Error:', url, e)
+
+# 下载歌词文件
+def download_file(url, name):
+  try:
+    r = requests.get(url)
+    with open('C:/Users/miracle/Desktop/lyric/%s.lrc' % name, 'wb') as fw:#注意格式
+      fw.write(r.content)
+  except Exception as e:
+    print('Error:', url, name, e)
+
+# 解析搜索页面
+# 返回歌词链接列表
+def parse_search_page(html):
+  urls = []
+  tree = etree.HTML(html)
+  data = tree.xpath('//*[@id="result_container"]/div[1]/div[1]/ul/li')
+  for i in data:
+    link = i.xpath('div[1]/span[4]/a[1]/@href')
+    song_name = i.xpath('div[1]/span[4]/a[1]/text()')
+    if len(link) > 0 and len(song_name) > 0:##与逻辑
+      urls.append({
+        'url': link[0],
+        'name': song_name[0]
+      })
+  return urls
+
+# 获取歌曲页面的歌词下载链接
+def get_lyric_url(html):
+  tree = etree.HTML(html)
+  lyric_url = tree.xpath('//*[@id="lyricCont"]/@data-lrclink')
+  return lyric_url[0] if len(lyric_url) > 0 else None
+
+if __name__ == "__main__":
+  for page in range(5):#五页内容
+    search_url = lyric_search_template.format('张碧晨', 20 * page)
+    html = get_page(search_url)
+    song_urls = parse_search_page(html)
+    # print(song_urls)
+    for song in song_urls:
+      song_html = get_page(taihe_host + song['url'])
+      lyric_url = get_lyric_url(song_html)
+      print('page: %d | name: %s | url: %s' % (page, song['name'], lyric_url))
+      download_file(lyric_url, song['name'])
+      time.sleep(0.5)##延时，time库的引入
+
+      # break
